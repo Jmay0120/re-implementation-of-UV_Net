@@ -6,17 +6,7 @@ This repository contains code for the paper:
 
 ![Teaser](docs/img/Teaser.png)
 
-UV-Net is a neural network designed to operate directly on Boundary representation (B-rep) data from 3D CAD models. The B-rep format is widely used in the design, simulation and manufacturing industries to enable sophisticated and precise CAD modeling operations. However, B-rep data presents some unique challenges when used with neural networks due to the complexity of the data structure and its support for various disparate geometric and topological entities.
-
-In UV-Net, we represent the geometry stored in the edges (curves) and faces (surfaces) of the B-rep using 1D and 2D UV-grids, a structured set of points sampled by taking uniform steps in the parameter domain. 1D and 2D convolutional neural networks can be applied on these UV-grids to encode the edge and face geometry.
-
-![UVGrid](docs/img/UVGrid.png)
-
-The topology is represented using a face-adjacency graph where features from the face UV-grids are stored as node features, and features from the edge UV-grids are stored as edge features. A graph neural network is then used to message pass these features to obtain embeddings for faces, edges and the entire solid model.
-
-![MessagePassing](docs/img/MessagePassing.png)
-
-## Environment setup
+## 环境配置
 
 ```
 conda env create -f environment.yml
@@ -28,34 +18,50 @@ For CPU-only environments, the CPU-version of the dgl has to be installed manual
 conda install -c dglteam dgl=0.6.1=py39_0
 ```
 
-## Training
+## 模型训练
 
-The classification model can be trained using:
+### 分类模型训练
+数据集：SolidLetters，将num_workers设置为8
 ```
-python classification.py train --dataset solidletters --dataset_path /path/to/solidletters --max_epochs 100 --batch_size 64 --experiment_name classification
-```
-
-Only the SolidLetters dataset is currently supported for classification.
-
-The segmentation model can be trained similarly:
-```
-python segmentation.py train --dataset mfcad --dataset_path /path/to/mfcad --max_epochs 100 --batch_size 64 --experiment_name segmentation
+python classification.py train --dataset solidletters --dataset_path data/SolidLetters --max_epochs 100 --batch_size 64 --experiment_name classification --gpus=1
 ```
 
-The MFCAD and Fusion 360 Gallery segmentation datasets are supported for segmentation.
+### 分割模型训练
+数据集：MFCAD，将num_workers设置为8
+```
+python segmentation.py train --dataset mfcad --dataset_path data/MFCADDataset --max_epochs 100 --batch_size 64 --experiment_name segmentation --gpus=1
+```
 
-The logs and checkpoints will be stored in a folder called `results/classification` or `results/segmentation` based on the experiment name and timestamp, and can be monitored with Tensorboard:
+日志与训练好的模型会保存到 `results/classification` or `results/segmentation` 文件夹中
 
+可以通过Tensorboard来监控训练
 ```
 tensorboard --logdir results/<experiment_name>
 ```
 
-## Testing
-The best checkpoints based on the smallest validation loss are saved in the results folder. The checkpoints can be used to test the model as follows:
+## 模型测试
+### 分类模型测试
+```
+python classification.py test --dataset solidletters --dataset_path data/SolidLetters --checkpoint ./results/classification/0407/102358/best.ckpt --gpus=1
+```
 
+### 分割模型测试
 ```
-python segmentation.py test --dataset mfcad --dataset_path /path/to/mfcad/ --checkpoint ./results/segmentation/best.ckpt
+python segmentation.py test --dataset mfcad --dataset_path data/MFCADDataset --checkpoint ./results/segmentation/0407/215311/best.ckpt --gpus=1
 ```
+
+## 结果对比
+### 分类结果
+| 实验 | Accuracy(%) |
+|:------:|:------:|
+| 论文结果  | 97.24  |
+| 复现结果  | 97.07  |
+
+### 分割结果
+| 实验 | Accuracy(%) | Intersection-over-Union(%) |
+|:------:|:------:| :------:|
+| 论文结果  | 99.95  |  99.87  |
+| 复现结果  | 99.98  |  99.95  |
 
 ## Data
 The network consumes [DGL](https://dgl.ai/)-based face-adjacency graphs, where each B-rep face is mapped to a node, and each B-rep edge is mapped to a edge. The face UV-grids are expected as node features and edge UV-grids as edge features. For example, the UV-grid features from our face-adjacency graph representation can be accessed as follows:
