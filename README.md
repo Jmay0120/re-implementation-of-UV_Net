@@ -1,4 +1,5 @@
 # UV-Net: Learning from Boundary Representations
+## 参考链接：https://github.com/AutodeskAILab/UV-Net
 
 This repository contains code for the paper:
 
